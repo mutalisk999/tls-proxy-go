@@ -63,6 +63,7 @@ func serverHandler(conn *tls.Conn, config *tls_proxy_go.ServerConfig) {
 		log.Printf("net.ResolveTCPAddr: %v", err)
 		return
 	}
+	log.Printf("proxy to: %v", tcpAddr)
 
 	clientConn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {

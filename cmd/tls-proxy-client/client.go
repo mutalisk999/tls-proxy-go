@@ -57,6 +57,7 @@ func main() {
 		return
 	}
 	log.Printf("bind on: %v", tcpAddr)
+	log.Printf("server: %v", fmt.Sprintf("%s:%d", config.ServerHost, config.ServerPort))
 
 	defer listener.Close()
 
