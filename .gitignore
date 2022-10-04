@@ -7,9 +7,14 @@ testnet.json
 
 .travis.yml
 *.log
-tls-client
-tls-client.exe
+tls-proxy-client
+tls-proxy-client.exe
+
+tls-proxy-server
+tls-proxy-server.exe
 
 .idea
 
-*.exe
+certs/*
+client.json
+server.json
