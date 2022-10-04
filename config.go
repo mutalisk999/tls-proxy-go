@@ -21,36 +21,36 @@ type ServerConfig struct {
 	ServerCert string `json:"server_cert"`
 }
 
-func loadClientConfig() (*ClientConfig, error) {
+func LoadClientConfig() (*ClientConfig, error) {
 	f, err := os.OpenFile("client.json", os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 	configBytes := make([]byte, 4096)
-	_, err = f.Read(configBytes)
+	n, err := f.Read(configBytes)
 	if err != nil {
 		return nil, err
 	}
 	clientConfig := ClientConfig{}
-	err = json.Unmarshal(configBytes, &clientConfig)
+	err = json.Unmarshal(configBytes[:n], &clientConfig)
 	if err != nil {
 		return nil, err
 	}
 	return &clientConfig, nil
 }
 
-func loadServerConfig() (*ServerConfig, error) {
+func LoadServerConfig() (*ServerConfig, error) {
 	f, err := os.OpenFile("server.json", os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
 	configBytes := make([]byte, 4096)
-	_, err = f.Read(configBytes)
+	n, err := f.Read(configBytes)
 	if err != nil {
 		return nil, err
 	}
 	serverConfig := ServerConfig{}
-	err = json.Unmarshal(configBytes, &serverConfig)
+	err = json.Unmarshal(configBytes[:n], &serverConfig)
 	if err != nil {
 		return nil, err
 	}

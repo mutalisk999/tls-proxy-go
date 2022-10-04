@@ -10,7 +10,7 @@ const (
 	ProtocolVersion = byte(0x05)
 )
 
-func getMethodsDescription(m byte) string {
+func GetMethodsDescription(m byte) string {
 	if m == byte(0x0) {
 		return "NO AUTHENTICATION REQUIRED"
 	} else if m == byte(0x01) {
@@ -28,7 +28,7 @@ func getMethodsDescription(m byte) string {
 	}
 }
 
-func parseHandshakeBody(body []byte) (bool, error) {
+func ParseHandshakeBody(body []byte) (bool, error) {
 	if len(body) <= 2 {
 		return false, errors.New("invalid handshake body length")
 	}
@@ -46,7 +46,7 @@ func parseHandshakeBody(body []byte) (bool, error) {
 	}
 }
 
-func parseRequestBody(body []byte) (*[]interface{}, error) {
+func ParseRequestBody(body []byte) (*[]interface{}, error) {
 	if len(body) <= 4 {
 		return nil, errors.New("invalid handshake body length")
 	}
