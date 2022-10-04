@@ -16,7 +16,7 @@ func serverHandler(conn *tls.Conn, config *tls_proxy_go.ServerConfig) {
 	defer conn.Close()
 
 	// read handshake data
-	body := make([]byte, 1024*1024)
+	body := make([]byte, 4096)
 	n, err := conn.Read(body)
 	if err != nil {
 		log.Printf("Read: %v", err)
