@@ -1,0 +1,6 @@
+{
+  "listen_host": "0.0.0.0",
+  "listen_port": 10035,
+  "server_key": "certs/server.key",
+  "server_cert": "certs/server.pem"
+}
