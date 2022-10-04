@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func serverHandler(conn *tls.Conn, config *tls_proxy_go.ServerConfig) {
+func serverHandler(conn *tls.Conn) {
 	defer conn.Close()
 
 	// read handshake data
@@ -58,12 +58,12 @@ func serverHandler(conn *tls.Conn, config *tls_proxy_go.ServerConfig) {
 		return
 	}
 
+	log.Printf("proxy to: %v", fmt.Sprintf("%s:%d", (*tuple)[2], (*tuple)[3]))
 	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", (*tuple)[2], (*tuple)[3]))
 	if err != nil {
 		log.Printf("net.ResolveTCPAddr: %v", err)
 		return
 	}
-	log.Printf("proxy to: %v", tcpAddr)
 
 	clientConn, err := net.DialTCP("tcp", nil, tcpAddr)
 	if err != nil {
@@ -122,6 +122,6 @@ func main() {
 		}
 		log.Printf("accept connection from: %v", conn.RemoteAddr())
 
-		go serverHandler(conn.(*tls.Conn), config)
+		go serverHandler(conn.(*tls.Conn))
 	}
 }
