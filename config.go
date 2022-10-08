@@ -12,6 +12,7 @@ type ClientConfig struct {
 	ServerPort uint16 `json:"server_port"`
 	ClientKey  string `json:"client_key"`
 	ClientCert string `json:"client_cert"`
+	CACert     string `json:"ca_cert"`
 }
 
 type ServerConfig struct {
@@ -19,6 +20,7 @@ type ServerConfig struct {
 	ListenPort uint16 `json:"listen_port"`
 	ServerKey  string `json:"server_key"`
 	ServerCert string `json:"server_cert"`
+	CACert     string `json:"ca_cert"`
 }
 
 func LoadClientConfig() (*ClientConfig, error) {

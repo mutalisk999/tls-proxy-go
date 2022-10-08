@@ -2,9 +2,11 @@ package main
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/mutalisk999/tls-proxy-go"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -19,7 +21,20 @@ func clientHandler(conn *net.TCPConn, config *tls_proxy_go.ClientConfig) {
 		return
 	}
 
-	tlsConfig := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true}
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile(config.CACert)
+	if err != nil {
+		log.Fatalf("ioutil.ReadFile CACert: %v", err)
+		return
+	}
+
+	ok := certPool.AppendCertsFromPEM(ca)
+	if !ok {
+		log.Fatalf("AppendCertsFromPEM")
+		return
+	}
+
+	tlsConfig := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true, RootCAs: certPool}
 	clientConn, err := tls.Dial("tcp",
 		fmt.Sprintf("%s:%d", config.ServerHost, config.ServerPort),
 		&tlsConfig)
@@ -65,6 +80,7 @@ func main() {
 		conn, err := listener.AcceptTCP()
 		if err != nil {
 			log.Fatalf("AcceptTCP: %v", err)
+			return
 		}
 		log.Printf("accept connection from: %v", conn.RemoteAddr())
 

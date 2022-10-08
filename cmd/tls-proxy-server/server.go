@@ -1,15 +1,15 @@
 package main
 
 import (
-	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"github.com/mutalisk999/tls-proxy-go"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
-	"time"
 )
 
 func serverHandler(conn *tls.Conn) {
@@ -98,12 +98,27 @@ func main() {
 	cert, err := tls.LoadX509KeyPair(config.ServerCert, config.ServerKey)
 	if err != nil {
 		log.Fatalf("LoadX509KeyPair: %v", err)
+		return
 	}
 
-	tlsConfig := &tls.Config{}
-	tlsConfig.Certificates = []tls.Certificate{cert}
-	tlsConfig.Time = time.Now
-	tlsConfig.Rand = rand.Reader
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile(config.CACert)
+	if err != nil {
+		log.Fatalf("ioutil.ReadFile CACert: %v", err)
+		return
+	}
+
+	ok := certPool.AppendCertsFromPEM(ca)
+	if !ok {
+		log.Fatalf("AppendCertsFromPEM")
+		return
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    certPool,
+	}
 
 	tcpAddr := fmt.Sprintf("%s:%d", config.ListenHost, config.ListenPort)
 	listener, err := tls.Listen("tcp", tcpAddr, tlsConfig)
@@ -119,6 +134,7 @@ func main() {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatalf("Accept: %v", err)
+			return
 		}
 		log.Printf("accept connection from: %v", conn.RemoteAddr())
 
