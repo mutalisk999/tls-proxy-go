@@ -34,7 +34,12 @@ func clientHandler(conn *net.TCPConn, config *tls_proxy_go.ClientConfig) {
 		return
 	}
 
-	tlsConfig := tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: true, RootCAs: certPool}
+	tlsConfig := tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: true,
+		RootCAs:            certPool,
+	}
+
 	clientConn, err := tls.Dial("tcp",
 		fmt.Sprintf("%s:%d", config.ServerHost, config.ServerPort),
 		&tlsConfig)

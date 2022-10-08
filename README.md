@@ -8,18 +8,6 @@
 mkdir certs
 rm certs/*
 
-# for tls server
-openssl req -new -nodes -x509 -out certs/server.pem -keyout certs/server.key -days 36500
-
-# for tls client
-openssl req -new -nodes -x509 -out certs/client.pem -keyout certs/client.key -days 36500
-```
-
-
-```
-mkdir certs
-rm certs/*
-
 # CA key and cert
 openssl genrsa -out certs/ca.key 2048
 openssl req -new -key certs/ca.key -out certs/ca.csr
@@ -34,7 +22,6 @@ openssl x509 -req -in certs/server.csr -out certs/server.pem -signkey certs/serv
 openssl genrsa -out certs/client.key 2048
 openssl req -new -key certs/client.key -out certs/client.csr
 openssl x509 -req -in certs/client.csr -out certs/client.pem -signkey certs/client.key -CA certs/ca.pem -CAkey certs/ca.key -CAcreateserial -days 36500
-
 ```
 
 ### Client
