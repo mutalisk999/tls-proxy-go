@@ -4,12 +4,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/libp2p/go-reuseport"
 	"github.com/mutalisk999/tls-proxy-go"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 func serverHandler(conn *tls.Conn) {
@@ -59,15 +61,14 @@ func serverHandler(conn *tls.Conn) {
 	}
 
 	log.Printf("proxy to: %v", fmt.Sprintf("%s:%d", (*tuple)[2], (*tuple)[3]))
-	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", (*tuple)[2], (*tuple)[3]))
-	if err != nil {
-		log.Printf("net.ResolveTCPAddr: %v", err)
-		return
-	}
 
-	clientConn, err := net.DialTCP("tcp", nil, tcpAddr)
+	tcpAddr := fmt.Sprintf("%s:%d", (*tuple)[2], (*tuple)[3])
+	clientConn, err := net.DialTimeout(
+		"tcp",
+		tcpAddr,
+		3*time.Second)
 	if err != nil {
-		log.Printf("net.DialTCP: %v", err)
+		log.Printf("net.DialTimeout: %v", err)
 		return
 	}
 
@@ -88,6 +89,9 @@ func serverHandler(conn *tls.Conn) {
 
 func main() {
 	log.SetOutput(os.Stdout)
+
+	// set rlimit nofile value
+	tls_proxy_go.SetRLimit(100000)
 
 	config, err := tls_proxy_go.LoadServerConfig()
 	if err != nil {
@@ -120,18 +124,20 @@ func main() {
 		ClientCAs:    certPool,
 	}
 
-	tcpAddr := fmt.Sprintf("%s:%d", config.ListenHost, config.ListenPort)
-	listener, err := tls.Listen("tcp", tcpAddr, tlsConfig)
+	bindAddr := fmt.Sprintf("%s:%d", config.ListenHost, config.ListenPort)
+	listener, err := reuseport.Listen("tcp", bindAddr)
 	if err != nil {
 		log.Fatalf("tls.Listen: %v", err)
 		return
 	}
-	log.Printf("tls bind on: %v", tcpAddr)
 
-	defer listener.Close()
+	tlsListener := tls.NewListener(listener, tlsConfig)
+	log.Printf("tls server bind on: %v", bindAddr)
+
+	defer tlsListener.Close()
 
 	for {
-		conn, err := listener.Accept()
+		conn, err := tlsListener.Accept()
 		if err != nil {
 			log.Fatalf("Accept: %v", err)
 			return

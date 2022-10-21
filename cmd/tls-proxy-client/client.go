@@ -4,18 +4,23 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/libp2p/go-reuseport"
 	"github.com/mutalisk999/tls-proxy-go"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
-func clientHandler(conn *net.TCPConn, config *tls_proxy_go.ClientConfig) {
+func clientHandler(conn net.Conn, config *tls_proxy_go.ClientConfig) {
 	defer conn.Close()
 
-	cert, err := tls.LoadX509KeyPair(config.ClientCert, config.ClientKey)
+	cert, err := tls.LoadX509KeyPair(
+		config.ClientCert,
+		config.ClientKey,
+	)
 	if err != nil {
 		log.Fatalf("LoadX509KeyPair: %v", err)
 		return
@@ -40,8 +45,12 @@ func clientHandler(conn *net.TCPConn, config *tls_proxy_go.ClientConfig) {
 		RootCAs:            certPool,
 	}
 
-	clientConn, err := tls.Dial("tcp",
-		fmt.Sprintf("%s:%d", config.ServerHost, config.ServerPort),
+	dialer := net.Dialer{Timeout: 5 * time.Second}
+	tcpAddr := fmt.Sprintf("%s:%d", config.ServerHost, config.ServerPort)
+	clientConn, err := tls.DialWithDialer(
+		&dialer,
+		"tcp",
+		tcpAddr,
 		&tlsConfig)
 	if err != nil {
 		log.Printf("tls.Dial: %v", err)
@@ -59,32 +68,29 @@ func clientHandler(conn *net.TCPConn, config *tls_proxy_go.ClientConfig) {
 func main() {
 	log.SetOutput(os.Stdout)
 
+	// set rlimit nofile value
+	tls_proxy_go.SetRLimit(100000)
+
 	config, err := tls_proxy_go.LoadClientConfig()
 	if err != nil {
 		log.Fatalf("LoadClientConfig: %v", err)
 		return
 	}
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", config.ListenHost, config.ListenPort))
+	bindAddr := fmt.Sprintf("%s:%d", config.ListenHost, config.ListenPort)
+	listener, err := reuseport.Listen("tcp", bindAddr)
 	if err != nil {
-		log.Fatalf("ResolveTCPAddr: %v", err)
+		log.Fatalf("reuseport.Listen: %v", err)
 		return
 	}
-
-	listener, err := net.ListenTCP("tcp", tcpAddr)
-	if err != nil {
-		log.Fatalf("ListenTCP: %v", err)
-		return
-	}
-	log.Printf("bind on: %v", tcpAddr)
-	log.Printf("server: %v", fmt.Sprintf("%s:%d", config.ServerHost, config.ServerPort))
+	log.Printf("server bind on: %v", bindAddr)
 
 	defer listener.Close()
 
 	for {
-		conn, err := listener.AcceptTCP()
+		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatalf("AcceptTCP: %v", err)
+			log.Fatalf("Accept: %v", err)
 			return
 		}
 		log.Printf("accept connection from: %v", conn.RemoteAddr())
